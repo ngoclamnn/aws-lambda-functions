@@ -13,10 +13,7 @@ const sqlConfig = {
   }
 }
 
-
-
-
-exports.handler = async (event, context) => {
+exports.handler = (event, context) => {
   sql.connect(sqlConfig, err => {
     // ... error checks
     let htmlTr = ""
@@ -45,7 +42,7 @@ exports.handler = async (event, context) => {
       console.log(content)
       sendEmail(content)
     })
- 
+
   })
 
   sql.on('error', err => {
@@ -53,7 +50,7 @@ exports.handler = async (event, context) => {
   })
 }
 
-function sendEmail(htmlContent){
+function sendEmail(htmlContent) {
   console.log('sendEmail');
   const params = {
     from: 'primera@partnersgroup.com',
@@ -74,24 +71,24 @@ function sendEmail(htmlContent){
     requestCert: true,
     agent: false,
     headers: {
-         'Content-Type': 'application/x-www-form-urlencoded',
-         'Content-Length': postData.length
-       }
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Length': postData.length
+    }
   };
-  
+
   var req = https.request(options, (res) => {
     console.log('statusCode:', res.statusCode);
     console.log('headers:', res.headers);
-  
+
     res.on('data', (d) => {
       process.stdout.write(d);
     });
   });
-  
+
   req.on('error', (e) => {
     console.error(e);
   });
-  
+
   req.write(postData);
   req.end();
 }

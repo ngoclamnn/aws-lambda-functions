@@ -13,6 +13,8 @@ const sqlConfig = {
     }
 }
 async function main() {
+    var date = new Date(Date.UTC(2012, 11, 20, 3, 0, 0));
+    console.log(date.toLocaleTimeString([], { year: '2-digit', hour: '2-digit', minute: '2-digit' }));
     sql.connect(sqlConfig, err => {
         // ... error checks
         let htmlTr = ""
