@@ -6,35 +6,44 @@ const sqlConfig = {
   password: process.env.RDS_PASSWORD,
   database: process.env.RDS_DB_NAME,
   server: process.env.RDS_HOST,
-  // pool: {
-  //   max: 10,
-  //   min: 0,
-  //   idleTimeoutMillis: 30000
-  // },
   port: 1433,
   options: {
-    encrypt: false, // for azure
-    trustServerCertificate: false // change to true for local dev / self-signed certs
+    encrypt: false,
+    trustServerCertificate: false
   }
 }
 
-exports.handler = async(event, context) => {
- try {
-  // make sure that any items are correctly URL encoded in the connection string
-  await sql.connect(sqlConfig)
-  const result = await sql.query`select * FROM gcms.T_Release WHERE endtime<getdate() AND status not in ('Implemented','Cancelled','Rejected')`
-  console.dir(result)
-  var eventText = JSON.stringify(event, null, 2);
-  console.log("Received event:", eventText);
-  var sns = new AWS.SNS();
-  var params = {
-      Message: eventText, 
-      Subject: "Test SNS From Lambda",
-      TopicArn: SNS_TOPIC
-  };
-  sns.publish(params, context.done);
+exports.handler = async (event, context) => {
+  sql.connect(sqlConfig, err => {
+    // ... error checks
+    let htmlTr = ""
+    const request = new sql.Request()
+    request.stream = true // You can set streaming differently for each request
+    request.query('SELECT * FROM AccountCore.dbo.Clients') // or request.execute(procedure)
+    request.on('row', row => {
+      console.log(row.Id)
+      htmlTr += `<tr><td>${row.Id}</td><td>${row.ClientId}<td><td>${row.ProtocolType}</td><td>${row.AllowRememberConsent}<td><td>${row.AlwaysIncludeUserClaimsInIdToken}</td></tr>`
+    })
+    request.on('done', result => {
+      let htmlTable = `<table>${htmlTr}<table>`
+      const content = `<!DOCTYPE html>
+        <html>
+        <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Welcome Email</title>
+        </head>
+        <body>
+        <h2>Hello Sammy</h2>
+        <p>Here is the GCMS approval data. </p>
+        ${htmlTable}
+        </body>
+        </html>`
+      console.log(content)
+    })
+  })
 
- } catch (err) {
-  console.log(err)
- }
+  sql.on('error', err => {
+    console.log(err)
+  })
 }
